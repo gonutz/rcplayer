@@ -35,7 +35,7 @@ func main() {
 	}
 	defer fb.Close()
 
-	font, err := gofont.LoadFromFile("/usr/share/fonts/truetype/roboto/Roboto-Regular.ttf")
+	font, err = gofont.LoadFromFile("/usr/share/fonts/truetype/roboto/Roboto-Regular.ttf")
 	if err != nil {
 		panic(err)
 	}
