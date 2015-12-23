@@ -62,8 +62,8 @@ func main() {
 			}
 		case rc.KeyOK:
 			if filesInWorkingDir[selection].isDir {
-				refreshWorkingDir()
 				workingDirectory = filesInWorkingDir[selection].path
+				refreshWorkingDir()
 			} else {
 				// TODO play the video if it is one
 			}
