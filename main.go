@@ -47,19 +47,11 @@ func main() {
 	for {
 		key := <-keys
 		guiMutex.Lock()
+		guiDirty = true
 
 		switch key {
 		case rc.KeyWindows:
-			filesInWorkingDir = listFilesIn(workingDirectory)
-			if len(filesInWorkingDir) == 0 {
-				panic("this should not happen, at least . should be in here")
-			}
-			if selection < 0 {
-				selection = 0
-			}
-			if selection >= len(filesInWorkingDir) {
-				selection = len(filesInWorkingDir) - 1
-			}
+			refreshWorkingDir()
 		case rc.KeyUp:
 			if selection > 0 {
 				selection--
@@ -68,10 +60,31 @@ func main() {
 			if selection < len(filesInWorkingDir)-1 {
 				selection++
 			}
+		case rc.KeyOK:
+			if filesInWorkingDir[selection].isDir {
+				refreshWorkingDir()
+				workingDirectory = filesInWorkingDir[selection].path
+			} else {
+				// TODO play the video if it is one
+			}
+		default:
+			guiDirty = false
 		}
-		guiDirty = true
 
 		guiMutex.Unlock()
+	}
+}
+
+func refreshWorkingDir() {
+	filesInWorkingDir = listFilesIn(workingDirectory)
+	if len(filesInWorkingDir) == 0 {
+		panic("this should not happen, at least . should be in here")
+	}
+	if selection < 0 {
+		selection = 0
+	}
+	if selection >= len(filesInWorkingDir) {
+		selection = len(filesInWorkingDir) - 1
 	}
 }
 
