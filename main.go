@@ -23,7 +23,7 @@ var (
 
 func main() {
 	var err error
-	fb, err = framebuffer.OpenDevice("/dev/fb0")
+	fb, err = framebuffer.Open("/dev/fb0")
 	if err != nil {
 		panic(err)
 	}
