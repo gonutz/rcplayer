@@ -16,13 +16,15 @@ import (
 )
 
 var (
-	player           videoPlayer = &stubVideoPlayer{}
-	workingDirectory             = "/mnt"
-	guiMutex         sync.Mutex
-	nextWakeUp       = time.Now()
-	font             *gofont.Font
-	fb               *framebuffer.Device
-	selection        int
+	player            videoPlayer = &stubVideoPlayer{}
+	workingDirectory              = "/mnt"
+	guiMutex          sync.Mutex
+	nextWakeUp        = time.Now()
+	font              *gofont.Font
+	fb                *framebuffer.Device
+	selection         int
+	filesInWorkingDir []file
+	guiDirty          bool
 )
 
 func main() {
@@ -45,21 +47,42 @@ func main() {
 	for {
 		key := <-keys
 		guiMutex.Lock()
-		wakeUpTV()
-		clearTV()
-		if key == rc.KeyWindows {
-			files := listFilesIn(workingDirectory)
-			if len(files) == 0 {
+
+		switch key {
+		case rc.KeyWindows:
+			filesInWorkingDir = listFilesIn(workingDirectory)
+			if len(filesInWorkingDir) == 0 {
 				panic("this should not happen, at least . should be in here")
 			}
 			if selection < 0 {
 				selection = 0
 			}
-			if selection >= len(files) {
-				selection = len(files) - 1
+			if selection >= len(filesInWorkingDir) {
+				selection = len(filesInWorkingDir) - 1
 			}
+		case rc.KeyUp:
+			if selection > 0 {
+				selection--
+			}
+		case rc.KeyDown:
+			if selection < len(filesInWorkingDir)-1 {
+				selection++
+			}
+		}
+		guiDirty = true
+
+		guiMutex.Unlock()
+	}
+}
+
+func renderGui() {
+	for {
+		guiMutex.Lock()
+		if guiDirty {
+			wakeUpTV()
+			clearTV()
 			x, y := 0, 0
-			for i, f := range files {
+			for i, f := range filesInWorkingDir {
 				if i == selection {
 					font.R, font.G, font.B = 255, 64, 255
 				} else if f.isDir {
@@ -69,13 +92,12 @@ func main() {
 				}
 				x, y = font.Write(f.path+"\n", fb, x, y)
 			}
+			guiDirty = false
 		}
 		guiMutex.Unlock()
+
+		time.Sleep(500 * time.Millisecond)
 	}
-}
-
-func renderGui() {
-
 }
 
 func wakeUpTV() error {
