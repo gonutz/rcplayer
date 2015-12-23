@@ -4,6 +4,9 @@ import (
 	"github.com/gonutz/framebuffer"
 	"github.com/gonutz/gofont"
 	"github.com/gonutz/rc"
+	"image"
+	"image/color"
+	"image/draw"
 	"os"
 	"path/filepath"
 	"sort"
@@ -19,6 +22,7 @@ var (
 	nextWakeUp       = time.Now()
 	font             *gofont.Font
 	fb               *framebuffer.Device
+	selection        int
 )
 
 func main() {
@@ -42,11 +46,23 @@ func main() {
 		key := <-keys
 		guiMutex.Lock()
 		wakeUpTV()
+		clearTV()
 		if key == rc.KeyWindows {
 			files := listFilesIn(workingDirectory)
+			if len(files) == 0 {
+				panic("this should not happen, at least . should be in here")
+			}
+			if selection < 0 {
+				selection = 0
+			}
+			if selection >= len(files) {
+				selection = len(files) - 1
+			}
 			x, y := 0, 0
-			for _, f := range files {
-				if f.isDir {
+			for i, f := range files {
+				if i == selection {
+					font.R, font.G, font.B = 255, 64, 255
+				} else if f.isDir {
 					font.R, font.G, font.B = 255, 0, 0
 				} else {
 					font.R, font.G, font.B = 0, 255, 0
@@ -76,6 +92,10 @@ func wakeUpTV() error {
 	} else {
 		return nil
 	}
+}
+
+func clearTV() {
+	draw.Draw(fb, fb.Bounds(), image.NewUniform(color.RGBA{0, 0, 0, 255}), image.ZP, draw.Src)
 }
 
 func listFilesIn(dir string) (files []file) {
