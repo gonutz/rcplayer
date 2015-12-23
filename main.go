@@ -39,7 +39,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	font.PixelHeight = 35
 
 	go renderGui()
 
@@ -67,6 +66,10 @@ func main() {
 			} else {
 				// TODO play the video if it is one
 			}
+		case rc.KeyBack:
+			// assumption: the first entry is the parent directory
+			workingDirectory = filesInWorkingDir[0].path
+			refreshWorkingDir()
 		default:
 			guiDirty = false
 		}
@@ -96,7 +99,9 @@ func renderGui() {
 			clearTV()
 			x, y := 0, 0
 			for i, f := range filesInWorkingDir {
+				font.PixelHeight = 35
 				if i == selection {
+					font.PixelHeight = 45
 					font.R, font.G, font.B = 255, 64, 255
 				} else if f.isDir {
 					font.R, font.G, font.B = 255, 0, 0
