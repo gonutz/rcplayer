@@ -59,12 +59,14 @@ func main() {
 		case rc.KeyWindows:
 			refreshWorkingDir()
 		case rc.KeyUp:
-			if selection > 0 {
-				selection--
+			selection--
+			if selection < 0 {
+				selection = len(filesInWorkingDir) - 1
 			}
 		case rc.KeyDown:
-			if selection < len(filesInWorkingDir)-1 {
-				selection++
+			selection++
+			if selection >= len(filesInWorkingDir) {
+				selection = 0
 			}
 		case rc.KeyProgramUp:
 			selection -= 10
