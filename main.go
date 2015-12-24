@@ -25,6 +25,13 @@ var (
 	selection         int
 	filesInWorkingDir []file
 	guiDirty          bool
+	zoom              = medium
+)
+
+const (
+	small = iota
+	medium
+	large
 )
 
 func main() {
@@ -70,6 +77,12 @@ func main() {
 			// assumption: the first entry is the parent directory
 			workingDirectory = filesInWorkingDir[0].path
 			refreshWorkingDir()
+		case rc.Key1:
+			zoom = small
+		case rc.Key2:
+			zoom = medium
+		case rc.Key3:
+			zoom = large
 		default:
 			guiDirty = false
 		}
@@ -91,6 +104,30 @@ func refreshWorkingDir() {
 	}
 }
 
+func regularFontSize() int {
+	switch zoom {
+	case small:
+		return 20
+	case medium:
+		return 35
+	case large:
+		return 50
+	}
+	return 35
+}
+
+func selectedFontSize() int {
+	switch zoom {
+	case small:
+		return 25
+	case medium:
+		return 45
+	case large:
+		return 75
+	}
+	return 45
+}
+
 func renderGui() {
 	for {
 		guiMutex.Lock()
@@ -99,9 +136,9 @@ func renderGui() {
 			clearTV()
 			x, y := 0, 0
 			for i, f := range filesInWorkingDir {
-				font.PixelHeight = 35
+				font.PixelHeight = regularFontSize()
 				if i == selection {
-					font.PixelHeight = 45
+					font.PixelHeight = selectedFontSize()
 					font.R, font.G, font.B = 255, 64, 255
 				} else if f.isDir {
 					font.R, font.G, font.B = 255, 0, 0
