@@ -66,10 +66,21 @@ func main() {
 			if selection < len(filesInWorkingDir)-1 {
 				selection++
 			}
+		case rc.KeyProgramUp:
+			selection -= 10
+			if selection < 0 {
+				selection = 0
+			}
+		case rc.KeyProgramDown:
+			selection += 10
+			if selection >= len(filesInWorkingDir) {
+				selection = len(filesInWorkingDir) - 1
+			}
 		case rc.KeyOK:
 			if filesInWorkingDir[selection].isDir {
 				workingDirectory = filesInWorkingDir[selection].path
 				refreshWorkingDir()
+				selection = 0
 			} else {
 				// TODO play the video if it is one
 			}
