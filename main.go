@@ -9,6 +9,7 @@ import (
 	"image/color"
 	"image/draw"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -26,6 +27,7 @@ var (
 	selection         int
 	filesInWorkingDir []file
 	guiDirty          bool
+	fbLost            bool
 	zoom              = medium
 )
 
@@ -57,11 +59,10 @@ func main() {
 
 		if player.isRunning() {
 			switch key {
-			case rc.KeyWindows:
+			case rc.KeyWindows, rc.KeyStop:
 				logError(player.stopVideo())
 				guiDirty = true
-			case rc.KeyStop:
-				logError(player.stopVideo())
+				fbLost = true
 			case rc.KeyVolumeDown:
 				logError(player.volumeDown())
 			case rc.KeyVolumeUp:
@@ -176,6 +177,17 @@ func renderGui() {
 		guiMutex.Lock()
 		if guiDirty {
 			wakeUpTV()
+			if fbLost {
+				logError(exec.Command("fbset",
+					"-xres", strconv.Itoa(fb.Bounds().Dx()),
+					"-yres", strconv.Itoa(fb.Bounds().Dy()),
+					"-depth", "16").Run())
+				fb.Close()
+				var err error
+				fb, err = framebuffer.Open("/dev/fb0")
+				logError(err)
+				fbLost = false
+			}
 			clearTV()
 			x, y := 0, 0
 			for i, f := range filesInWorkingDir {
