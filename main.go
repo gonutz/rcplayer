@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/gonutz/framebuffer"
 	"github.com/gonutz/gofont"
 	"github.com/gonutz/rc"
@@ -16,7 +17,7 @@ import (
 )
 
 var (
-	player            videoPlayer = &stubVideoPlayer{}
+	player            videoPlayer = &omxplayer{}
 	workingDirectory              = "/mnt"
 	guiMutex          sync.Mutex
 	nextWakeUp        = time.Now()
@@ -53,51 +54,77 @@ func main() {
 	for {
 		key := <-keys
 		guiMutex.Lock()
-		guiDirty = true
 
-		switch key {
-		case rc.KeyWindows:
-			refreshWorkingDir()
-		case rc.KeyUp:
-			selection--
-			if selection < 0 {
-				selection = len(filesInWorkingDir) - 1
+		if player.isRunning() {
+			switch key {
+			case rc.KeyStop:
+				logError(player.stopVideo())
+			case rc.KeyVolumeDown:
+				logError(player.volumeDown())
+			case rc.KeyVolumeUp:
+				logError(player.volumeUp())
+			case rc.KeyChapterBack:
+				logError(player.back10Minutes())
+			case rc.KeyChapterForward:
+				logError(player.forward10Minutes())
+			case rc.KeyRewind:
+				logError(player.back30Seconds())
+			case rc.KeyFastForward:
+				logError(player.forward30Seconds())
+			case rc.KeyPause:
+				logError(player.playPause())
+			case rc.KeyPlay:
+				logError(player.playPause())
 			}
-		case rc.KeyDown:
-			selection++
-			if selection >= len(filesInWorkingDir) {
-				selection = 0
-			}
-		case rc.KeyProgramUp:
-			selection -= 10
-			if selection < 0 {
-				selection = 0
-			}
-		case rc.KeyProgramDown:
-			selection += 10
-			if selection >= len(filesInWorkingDir) {
-				selection = len(filesInWorkingDir) - 1
-			}
-		case rc.KeyOK:
-			if filesInWorkingDir[selection].isDir {
-				workingDirectory = filesInWorkingDir[selection].path
+		} else {
+			guiDirty = true
+			switch key {
+			case rc.KeyWindows:
 				refreshWorkingDir()
-				selection = 0
-			} else {
-				// TODO play the video if it is one
+			case rc.KeyUp:
+				selection--
+				if selection < 0 {
+					selection = len(filesInWorkingDir) - 1
+				}
+			case rc.KeyDown:
+				selection++
+				if selection >= len(filesInWorkingDir) {
+					selection = 0
+				}
+			case rc.KeyProgramUp:
+				selection -= 10
+				if selection < 0 {
+					selection = 0
+				}
+			case rc.KeyProgramDown:
+				selection += 10
+				if selection >= len(filesInWorkingDir) {
+					selection = len(filesInWorkingDir) - 1
+				}
+			case rc.KeyOK:
+				if filesInWorkingDir[selection].isDir {
+					workingDirectory = filesInWorkingDir[selection].path
+					refreshWorkingDir()
+					selection = 0
+				} else {
+					err := player.playVideo(filesInWorkingDir[selection].path)
+					if err != nil {
+						fmt.Println("Cannot play", filesInWorkingDir[selection].path, err)
+					}
+				}
+			case rc.KeyBack:
+				// assumption: the first entry is the parent directory
+				workingDirectory = filesInWorkingDir[0].path
+				refreshWorkingDir()
+			case rc.Key1:
+				zoom = small
+			case rc.Key2:
+				zoom = medium
+			case rc.Key3:
+				zoom = large
+			default:
+				guiDirty = false
 			}
-		case rc.KeyBack:
-			// assumption: the first entry is the parent directory
-			workingDirectory = filesInWorkingDir[0].path
-			refreshWorkingDir()
-		case rc.Key1:
-			zoom = small
-		case rc.Key2:
-			zoom = medium
-		case rc.Key3:
-			zoom = large
-		default:
-			guiDirty = false
 		}
 
 		guiMutex.Unlock()
@@ -229,4 +256,10 @@ func (f fileList) Less(i, j int) bool {
 
 func (f fileList) Swap(i, j int) {
 	f[i], f[j] = f[j], f[i]
+}
+
+func logError(err error) {
+	if err != nil {
+		fmt.Println(err)
+	}
 }
