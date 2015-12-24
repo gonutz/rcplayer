@@ -26,6 +26,7 @@ var (
 	selection         int
 	filesInWorkingDir []file
 	guiDirty          bool
+	fbLost            bool
 	zoom              = medium
 )
 
@@ -57,6 +58,10 @@ func main() {
 
 		if player.isRunning() {
 			switch key {
+			case rc.KeyWindows:
+				logError(player.stopVideo())
+				guiDirty = true
+				fbLost = true
 			case rc.KeyStop:
 				logError(player.stopVideo())
 			case rc.KeyVolumeDown:
@@ -172,6 +177,16 @@ func renderGui() {
 	for {
 		guiMutex.Lock()
 		if guiDirty {
+			if fbLost {
+				fb.Close()
+				var err error
+				fb, err = framebuffer.Open("/dev/fb0")
+				if err != nil {
+					panic(err)
+				}
+				fbLost = false
+			}
+
 			wakeUpTV()
 			clearTV()
 			x, y := 0, 0
