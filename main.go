@@ -177,8 +177,8 @@ func renderGui() {
 	for {
 		guiMutex.Lock()
 		if guiDirty {
-			wakeUpTV()
 			if fbLost {
+				fmt.Println("fb lost, running: fbset", fb.Bounds().Dx(), fb.Bounds().Dy())
 				logError(exec.Command("fbset",
 					"-xres", strconv.Itoa(fb.Bounds().Dx()),
 					"-yres", strconv.Itoa(fb.Bounds().Dy()),
@@ -189,6 +189,7 @@ func renderGui() {
 				logError(err)
 				fbLost = false
 			}
+			wakeUpTV()
 			clearTV()
 			x, y := 0, 0
 			for i, f := range filesInWorkingDir {
